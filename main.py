@@ -3,15 +3,13 @@ import googlemaps
 from datetime import datetime
 from rightmove import get_rightmove
 from location import get_location_info
-from journey import get_monthly_journey
+from journey import attach_travel_info
 import time
 import os
-from haversine import Haversine
 
 
 pd.set_option('display.width', 200)
 pd.set_option('max.columns', 200)
-DESTINATION = (51.520136, -0.104748)
 
 
 def multiple_deprivation():
@@ -73,44 +71,6 @@ def attach_location_info(data):
     return data
 
 
-def attach_travel_info(data):
-    new_columns = {'ID': [],
-                   'JourneyDuration': [],
-                   'JourneyFare': [],
-                   'Walking': [],
-                   'Train': [],
-                   'Underground': [],
-                   'Bus': []}
-
-    cache_file = 'cache/travel_info.pickle'
-
-    if os.path.exists(cache_file):
-        cache_data = pd.read_pickle(cache_file)
-        for key in new_columns.keys():
-            new_columns[key] = list(cache_data[key].values)
-
-    iter_data = data[~data.ID.isin(new_columns['ID'])]
-    for row in iter_data.iterrows():
-        origin = (row[1].Longitude, row[1].Latitude)
-
-        dist = Haversine(origin, DESTINATION)
-        if dist.miles > 30.0:
-            continue
-
-        journey = get_monthly_journey(origin, DESTINATION,
-                                      '0845', '1715')
-        for key in [x for x in new_columns.keys() if x != 'ID']:
-            new_columns[key].append(journey[key])
-
-        new_columns['ID'].append(row[1].ID)
-
-        pd.DataFrame(new_columns).to_pickle(cache_file)
-
-    data = data.merge(pd.DataFrame(new_columns), on='ID')
-
-    return data
-
-
 if __name__ == '__main__':
     start = datetime.now()
 
@@ -133,23 +93,23 @@ if __name__ == '__main__':
         data.to_pickle(stage_file)
         print(datetime.now() - start)
 
-    # stage_file = 'cache/stage3.pickle'
-    # if os.path.exists(stage_file):
-    #     data = pd.read_pickle(stage_file)
-    # else:
-    #     print('Attaching multiple deprivation index')
-    #     bad_data = data[data.LSOA.isnull()]
-    #     data = data[~data.LSOA.isnull()]
-    #     md = multiple_deprivation()
-    #     data = data.merge(md, on='LSOA')
-    #     data.to_pickle(stage_file)
-    #     print(datetime.now() - start)
-    #
-    # stage_file = 'cache/stage4.pickle'
-    # if os.path.exists(stage_file):
-    #     data = pd.read_pickle(stage_file)
-    # else:
-    #     print('Attaching travel info')
-    #     data = attach_travel_info(data)
-    #     data.to_pickle(stage_file)
-    #     print(datetime.now() - start)
+    stage_file = 'cache/stage3.pickle'
+    if os.path.exists(stage_file):
+        data = pd.read_pickle(stage_file)
+    else:
+        print('Attaching multiple deprivation index')
+        bad_data = data[data.LSOA.isnull()]
+        data = data[~data.LSOA.isnull()]
+        md = multiple_deprivation()
+        data = data.merge(md, on='LSOA')
+        data.to_pickle(stage_file)
+        print(datetime.now() - start)
+
+    stage_file = 'cache/stage4.pickle'
+    if os.path.exists(stage_file):
+        data = pd.read_pickle(stage_file)
+    else:
+        print('Attaching travel info')
+        data = attach_travel_info(data)
+        data.to_pickle(stage_file)
+        print(datetime.now() - start)

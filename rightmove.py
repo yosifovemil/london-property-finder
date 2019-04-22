@@ -1,5 +1,7 @@
 from rightmove_webscraper import rightmove_data
 import pandas as pd
+import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 
 
 URL = 'https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=OUTCODE%%5E%d' \
@@ -41,6 +43,11 @@ def get_rightmove(n=None):
     if n is not None:
         rightmove_codes = rightmove_codes.iloc[:n, ]
 
+    rightmove_codes = dd.from_pandas(rightmove_codes, chunksize=1)
     data = rightmove_codes.apply(_scrape_outcode, axis=1)
+    with ProgressBar():
+        data = data.compute()
+
     data = pd.concat(data.values)
+
     return data

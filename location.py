@@ -1,7 +1,8 @@
 from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
 import requests
 import pandas as pd
+from datetime import datetime
+from tqdm import tqdm
 
 
 def get_lsoa(longitude, latitude):
@@ -37,19 +38,25 @@ def get_coordinates(data, geocoder):
 
     # choose geocoder
     if geocoder == 'Nominatim':
-        geolocator = Nominatim(user_agent="HouseFinder")
+        geolocator = Nominatim(user_agent="LondonPropertyFinder",
+                               domain='localhost/nominatim',
+                               country_bias='United Kingdom',
+                               scheme='http',
+                               view_box=[(51.201721, -0.799255), (51.828988, 0.477905)],
+                               timeout=10)
     else:
         raise Exception("Geocoder %s not implemented" % geocoder)
 
-    # limit requests rate
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
-
     # apply geocoder
-    data['Location'] = data.address.apply(geocode)
+    start = datetime.now()
+    tqdm.pandas()
+    print("Running %s" % geocoder)
+    data['Location'] = data.address.progress_apply(lambda x: geolocator.geocode(x, bounded=True))
+    print(datetime.now() - start)
 
     # check if found addresses match what we requested
     data['Outcode2'] = get_outcode_from_address(data.Location)
-    data = data[data.Outcode == data.Outcode2]
+    data = pd.DataFrame(data[data.Outcode == data.Outcode2])
 
     # extract coordinates
     data['Latitude'] = data.Location.apply(lambda x: x.latitude)
@@ -64,16 +71,16 @@ def get_coordinates(data, geocoder):
                                 'number_bedrooms': 'Bedrooms'})
 
     # get LSOA for each location
-    data['LSOA'] = data.apply(lambda x: get_lsoa(x.Longitude, x.Latitude), axis=1)
+    data['LSOA'] = data.progress_apply(lambda x: get_lsoa(x.Longitude, x.Latitude), axis=1)
 
     return data
 
 
 def get_location_info(data):
-    data = data.sample(30)
-
     frames = []
     for geocoder in ['Nominatim']:
         frames.append(get_coordinates(data, geocoder))
         output_data = pd.concat(frames)
         data = data[~data.ID.isin(output_data.ID)]
+
+    return pd.concat(frames)
