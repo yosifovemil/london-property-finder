@@ -1,9 +1,10 @@
+from property_finder.utility.url import get_url
+from dask.diagnostics import ProgressBar
+
 from rightmove_webscraper import rightmove_data
 import pandas as pd
 import dask.dataframe as dd
-from dask.diagnostics import ProgressBar
 from functools import partial
-from property_finder.utility import get_url
 
 
 def _get_rightmove_codes(rightmove_codes_file, search_outcodes_file):
@@ -57,7 +58,9 @@ def _scrape_rightmove(config):
     with ProgressBar():
         data = data.compute()
 
-    data = pd.concat(data.values)
+    columns = ['price', 'type', 'address', 'url', 'agent_url', 'postcode',
+               'number_bedrooms', 'search_date', 'Outcode']
+    data = pd.concat([pd.DataFrame(x, columns=columns) for x in data.values if x is not None])
 
     data.rename(columns={'price': 'Price',
                          'type': 'Type',

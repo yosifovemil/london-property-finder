@@ -41,14 +41,19 @@ class Database:
 
         Table('Property', meta,
               Column(name='ID', type_=Integer, primary_key=True, nullable=False),
-              Column(name='Price', type_=Integer, nullable=False),
+              Column(name='Price', type_=Integer, nullable=True),
               Column(name='Type', type_=String, nullable=True),
               Column(name='URL', type_=String, nullable=False),
               Column(name='Bedrooms', type_=Integer, nullable=False))
 
         Table('Location', meta,
               Column(name='ID', type_=Integer, primary_key=True, nullable=False),
-              Column(name='Latitude', type_=Float, nullable=False),
+              Column(name='Latitude', type_=Float, nullable=True),
               Column(name='Longitude', type_=Float, nullable=True))
+
+        Table('LSOA', meta,
+              Column(name='ID', type_=Integer, primary_key=True, nullable=False),
+              Column(name='LSOA', type_=String, nullable=True),
+              Column(name='MultipleDeprivationIndex', type_=String, nullable=True))
 
         meta.create_all(self._engine)

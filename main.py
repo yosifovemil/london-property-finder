@@ -1,5 +1,6 @@
 from property_finder.rightmove.rightmove_properties import update_rightmove
 from property_finder.rightmove.rightmove_coordinates import update_coordinates
+from property_finder.LSOA import update_LSOA
 from property_finder.database import Database
 
 import json
@@ -29,6 +30,11 @@ def main():
         print("Scraping coordinates")
         update_coordinates(database=database,
                            config=config)
+
+    if stage_required(config, 'LSOA'):
+        print("Getting LSOA")
+        update_LSOA(database=database,
+                    config=config)
 
 
 if __name__ == '__main__':

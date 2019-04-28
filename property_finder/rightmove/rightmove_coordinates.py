@@ -1,7 +1,7 @@
-from property_finder.utility import get_url
+from property_finder.utility.url import get_url
+from dask.diagnostics import ProgressBar
 import re
 import dask.dataframe as dd
-from dask.diagnostics import ProgressBar
 import pandas as pd
 
 
@@ -19,7 +19,10 @@ def _extract_coordinate(name, string):
 def _apply_pattern(pattern, string):
     p = re.compile(pattern)
     result = p.search(string)
-    return result.group(0)
+    if result is not None:
+        return result.group(0)
+    else:
+        raise MissingMapException("No map available on page")
 
 
 def _get_property_coordinates(property):
@@ -28,9 +31,12 @@ def _get_property_coordinates(property):
 
     content = get_url(property.URL, 'iso-8859-1')
 
-    # get img element with the map
-    map_element = _apply_pattern('<img src="//media.rightmove.co.uk/map/_generate.*Get map and local information"/>',
-                                 content)
+    try:
+        # get img element with the map
+        map_element = _apply_pattern('<img src="//media.rightmove.co.uk/map/_generate.*Get map and local information"/>',
+                                     content)
+    except MissingMapException:
+        return property.ID, None, None
 
     # extract longitude from element
     latitude = _extract_coordinate('latitude', map_element)
@@ -53,6 +59,7 @@ def update_coordinates(database, config):
         with ProgressBar():
             new_locations = new_locations.compute()
 
+        new_locations = [x for x in new_locations if x is not None]
         new_locations = pd.DataFrame({'ID': [x[0] for x in new_locations],
                                       'Latitude': [x[1] for x in new_locations],
                                       'Longitude': [x[2] for x in new_locations]})
@@ -62,3 +69,7 @@ def update_coordinates(database, config):
     # remove location we no longer need
     database.run_sql(CLEANUP_LOCATIONS % (config['database']['LocationTable'],
                                           config['database']['PropertyTable']))
+
+
+class MissingMapException(Exception):
+    pass
