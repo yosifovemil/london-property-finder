@@ -1,0 +1,16 @@
+{
+  "database": {
+    "path": "data/database.db",
+    "PropertyTable": "Property",
+    "LocationTable": "Location"
+  },
+  "rightmove": {
+    "URL": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=OUTCODE%%5E%d&maxBedrooms=1&minBedrooms=1&maxPrice=1200&minPrice=800",
+    "rightmove_codes": "data/rightmove_outcodes.txt",
+    "search_outcodes": "data/search_outcodes.csv"
+  },
+  "run_stages": {
+    "rightmove": "True",
+    "location": "True"
+  }
+}
