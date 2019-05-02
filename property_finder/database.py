@@ -56,4 +56,13 @@ class Database:
               Column(name='LSOA', type_=String, nullable=True),
               Column(name='MultipleDeprivationIndex', type_=String, nullable=True))
 
+        Table('Travel', meta,
+              Column(name='ID', type_=Integer, primary_key=True, nullable=False),
+              Column(name='JourneyDuration', type_=Float, nullable=False),
+              Column(name='JourneyFare', type_=Float, nullable=False),
+              Column(name='Walking', type_=Float, nullable=False),
+              Column(name='Train', type_=Float, nullable=False),
+              Column(name='Underground', type_=Float, nullable=False),
+              Column(name='Bus', type_=Float, nullable=False))
+
         meta.create_all(self._engine)

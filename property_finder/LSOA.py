@@ -38,4 +38,5 @@ def update_LSOA(database, config):
     deprivation = multiple_deprivation()
     data = data.merge(deprivation, on='LSOA')
 
+    database.truncate_table(table=config['database']['LSOATable'])
     database.write_table(data=data, table=config['database']['LSOATable'])

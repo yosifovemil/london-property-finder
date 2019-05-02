@@ -3,16 +3,22 @@
     "path": "data/database.db",
     "PropertyTable": "Property",
     "LocationTable": "Location",
-    "LSOATable": "LSOA"
+    "LSOATable": "LSOA",
+    "TravelTable": "Travel"
   },
   "rightmove": {
     "URL": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=OUTCODE%%5E%d&maxBedrooms=1&minBedrooms=1&maxPrice=1200&minPrice=800",
     "rightmove_codes": "data/rightmove_outcodes.txt",
     "search_outcodes": "data/search_outcodes.csv"
   },
+  "journey": {
+    "destination_lat": "51.520136",
+    "destination_lon": "-0.104748"
+  },
   "run_stages": {
     "rightmove": "False",
     "location": "False",
-    "LSOA": "True"
+    "LSOA": "False",
+    "travel": "True"
   }
 }
