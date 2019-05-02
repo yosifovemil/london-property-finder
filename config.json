@@ -16,9 +16,9 @@
     "destination_lon": "-0.104748"
   },
   "run_stages": {
-    "rightmove": "False",
-    "location": "False",
-    "LSOA": "False",
-    "travel": "True"
+    "rightmove": "True",
+    "location": "True",
+    "LSOA": "True",
+    "travel": "False"
   }
 }
