@@ -64,6 +64,9 @@ def update_coordinates(database, config):
                                       'Latitude': [x[1] for x in new_locations],
                                       'Longitude': [x[2] for x in new_locations]})
 
+        new_locations = new_locations[(~new_locations.Latitude.isnull()) &
+                                      (~new_locations.Longitude.isnull())]
+
         database.write_table(new_locations, config['database']['LocationTable'])
 
     # remove location we no longer need

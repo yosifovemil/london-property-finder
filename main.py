@@ -18,7 +18,8 @@ def main():
         config = json.load(json_data_file)
 
     # set up the database
-    database = Database(config['database']['path'])
+    database = Database(database_path=config['database']['path'],
+                        reset_db=eval(config['database']['reset_db']))
 
     if stage_required(config, 'rightmove'):
         # scrape new rightmove data

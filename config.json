@@ -4,10 +4,11 @@
     "PropertyTable": "Property",
     "LocationTable": "Location",
     "LSOATable": "LSOA",
-    "TravelTable": "Travel"
+    "TravelTable": "Travel",
+    "reset_db": "True"
   },
   "rightmove": {
-    "URL": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=OUTCODE%%5E%d&maxBedrooms=1&minBedrooms=1&maxPrice=1200&minPrice=800",
+    "URL": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=OUTCODE%%5E%d&maxBedrooms=1&minBedrooms=2&maxPrice=1400&minPrice=800",
     "rightmove_codes": "data/rightmove_outcodes.txt",
     "search_outcodes": "data/search_outcodes.csv"
   },
@@ -19,6 +20,6 @@
     "rightmove": "True",
     "location": "True",
     "LSOA": "True",
-    "travel": "False"
+    "travel": "True"
   }
 }

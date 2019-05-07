@@ -3,9 +3,9 @@ import pandas as pd
 import time
 from functools import partial
 from property_finder.tfl_credentials import TFL_CREDENTIALS
-import dask.dataframe as dd
-from dask.diagnostics import ProgressBar
-
+from ratelimit import limits, sleep_and_retry
+from tqdm import tqdm
+from datetime import datetime
 
 
 # TODO remove hardcoded parameters from URL
@@ -13,8 +13,12 @@ TFL_URL = 'https://api.tfl.gov.uk/Journey/JourneyResults/' \
           '%f%%2C%%20%f/to/%f%%2C%%20%f?nationalSearch=true&date=20190527&time=%s&timeIs=%s&app_id=%s&app_key=%s'
 
 
+@sleep_and_retry
+@limits(calls=500, period=60)
 def get_single_journey(origin, destination, time_str, time_is):
     loaded = False
+    retries = 0
+
     while not loaded:
         try:
             result = requests.get(TFL_URL % (origin[0], origin[1],
@@ -25,7 +29,10 @@ def get_single_journey(origin, destination, time_str, time_is):
             journey = result['journeys'][0]
             loaded = True
         except:
-            time.sleep(0.2)
+            print("[%s] Could not connect to TFL API" % datetime.now())
+            retries += 1
+            if retries == 10:
+                raise Exception("Could not match journey")
 
     output = dict()
     output['JourneyDuration'] = journey['duration']
@@ -65,39 +72,39 @@ def get_monthly_journey(origin, destination, outbound_arrival, inbound_departure
     return result
 
 
-def process_row(destination, row):
-    result = {'ID': None,
-              'JourneyDuration': None,
-              'JourneyFare': None,
-              'Walking': None,
-              'Train': None,
-              'Underground': None,
-              'Bus': None}
+def process_row(destination, database, config, row):
+    result = {'ID': [],
+              'JourneyDuration': [],
+              'JourneyFare': [],
+              'Walking': [],
+              'Train': [],
+              'Underground': [],
+              'Bus': []}
 
     origin = (row.Latitude, row.Longitude)
 
-    journey = get_monthly_journey(origin, destination,
-                                  '0845', '1715')
-    for key in [x for x in result.keys() if x != 'ID']:
-        result[key] = journey[key]
+    try:
+        journey = get_monthly_journey(origin, destination,
+                                      '0845', '1715')
+        for key in [x for x in result.keys() if x != 'ID']:
+            result[key].append(journey[key])
 
-    result['ID'] = row.ID
-    return result
+        result['ID'].append(row.ID)
+
+        result = pd.DataFrame(result)
+        database.write_table(result, config['database']['TravelTable'])
+    except Exception as e:
+        print('ID: %s %s' % (row.ID, str(e)))
 
 
 def update_travel_info(database, config):
     location_data = database.read_table(table=config['database']['LocationTable'])
+    travel_data = database.read_table(table=config['database']['TravelTable'])
+
+    location_data = location_data[~location_data.ID.isin(travel_data.ID)]
 
     destination = (float(config['journey']['destination_lat']), float(config['journey']['destination_lon']))
-    get_journey = partial(process_row, destination)
+    get_journey = partial(process_row, destination, database, config)
 
-    location_data = dd.from_pandas(location_data, chunksize=1)
-    travel_data = location_data.apply(get_journey, axis=1, meta=(None, 'object'))
-
-    with ProgressBar():
-        travel_data = travel_data.compute()
-
-    travel_data = pd.DataFrame.from_records([x for x in travel_data if x is not None])
-
-    database.truncate_table(config['database']['TravelTable'])
-    database.write_table(travel_data, config['database']['TravelTable'])
+    tqdm.pandas()
+    location_data.progress_apply(get_journey, axis=1)

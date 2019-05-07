@@ -11,6 +11,7 @@ class Database:
         self._engine = create_engine('sqlite:///%s' % self._database_path)
 
         if reset_db:
+            print("Resetting the DB")
             os.remove(self._database_path)
 
         # initialise database if it does not exist yet or requested to do so
@@ -20,6 +21,10 @@ class Database:
     def read_table(self, table):
         connection = self._get_connection()
         return pd.read_sql_table(table, connection)
+
+    def read_from_sql(self, sql):
+        connection = self._get_connection()
+        return pd.read_sql(sql, connection)
 
     def write_table(self, data, table):
         connection = self._get_connection()
